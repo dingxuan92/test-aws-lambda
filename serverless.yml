@@ -1,19 +1,50 @@
-service: sample-app
+# serverless.yml
+
+service: my-express-application
+
+custom:
+  tableName: 'users-table-${self:provider.stage}'
+
 provider:
   name: aws
   runtime: nodejs12.x
   stage: dev
   region: ap-southeast-1
-  memorySize: 128
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+  environment:
+    USERS_TABLE: ${self:custom.tableName}
+
 functions:
   app:
-    handler: app/app.handler
-    events: 
-      - http: 
-          path: /
-          method: ANY
-          cors: true
-      - http: 
-          path: /{proxy+}
-          method: ANY
-          cors: true
+    handler: index.handler
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+
+resources:
+  Resources:
+    UsersDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.tableName}
