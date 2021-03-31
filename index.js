@@ -7,13 +7,14 @@ const express = require('express');
 const app = express();
 const AWS = require('aws-sdk');
 
-
-const USERS_TABLE = process.env.USERS_TABLE;
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
 app.use(cors());
 app.use(bodyParser.json({ strict: false }));
 
+const USERS_TABLE = process.env.USERS_TABLE;
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+
 app.get('/', function (req, res) {
+  console.log('DX :: hello world');
   res.send('Hello World!')
 })
 
@@ -33,6 +34,7 @@ app.get('/users/:userId', function (req, res) {
     }
     if (result.Item) {
       const {userId, name} = result.Item;
+      console.log('GET ONE USER :: ', { userId, name });
       res.json({ userId, name });
     } else {
       res.status(404).json({ error: "User not found" });
@@ -50,6 +52,7 @@ app.get('/users', function (req,res){
       res.status(400).json({ error: 'Could not get user' });
     }
     if (result) {
+      console.log('GET ALL USERS :: ', result);
       res.json(result);
     } else {
       res.status(404).json({ error: "No users found" });
@@ -79,6 +82,7 @@ app.post('/users', function (req, res) {
       console.log(error);
       res.status(400).json({ error: 'Could not create user' });
     }
+    console.log('CREATE USER :: ', { userId, name });
     res.json({ userId, name });
   });
 })
